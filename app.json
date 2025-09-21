@@ -1,0 +1,72 @@
+{
+  "expo": {
+    "name": "ZeroHarm",
+    "slug": "ZeroHarm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+
+    "icon": "./assets/icon.png",
+
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0F14"
+    },
+
+    "assetBundlePatterns": ["**/*"],
+
+    "plugins": [
+      "expo-image-picker",
+      "expo-av",
+      "expo-location"
+    ],
+
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow camera to take safety photos.",
+        "NSPhotoLibraryUsageDescription": "Allow picking safety photos from your library.",
+        "NSMicrophoneUsageDescription": "Allow recording voice notes for safety posts.",
+        "NSLocationWhenInUseUsageDescription": "Allow location so hazards can include a precise spot on site."
+      }
+    },
+
+    "android": {
+      "backgroundColor": "#0B0F14",
+      "edgeToEdgeEnabled": true,
+
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B0F14",
+        "monochromeImage": "./assets/adaptive-icon-mono.png"
+      },
+
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+
+    "androidStatusBar": {
+      "backgroundColor": "#0B0F14",
+      "barStyle": "light-content",
+      "translucent": false,
+      "hidden": false
+    },
+
+    "androidNavigationBar": {
+      "backgroundColor": "#0B0F14",
+      "barStyle": "light-content",
+      "visible": "leanback"
+    },
+
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
+
