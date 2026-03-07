@@ -4,6 +4,8 @@ MyZeroHarm is a mobile safety reporting and awareness app built to improve commu
 
 ## About
 This project was designed to help workers and safety teams report hazards faster, complete safety checks, share safety updates, and view trends in real time.
+## Problem It Solves
+In many workplaces, safety information is not always shared fast enough, and some issues are only discussed during toolbox talks or meetings. MyZeroHarm was built to make hazard reporting, safety communication, and team awareness more immediate, visible, and practical for daily site use.
 
 ## Main Features
 - Hazard, incident, leak, near-miss, and Section 23 reporting
@@ -44,6 +46,9 @@ This project was designed to help workers and safety teams report hazards faster
 
 ### Matrix Overview
 ![Matrix Overview](screenshots/matrix-overview.jpg)
+
+## How It Works
+Users can report hazards and safety issues directly in the app, complete task safety checklists, participate in team safety assessments, and share safety-related updates. Admin users can manage assessments, campaigns, and reporting statistics through the admin tools section.
 
 ## Status
 This project is actively being improved and expanded.
