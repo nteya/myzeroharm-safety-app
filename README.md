@@ -30,9 +30,6 @@ This project was designed to help workers and safety teams report hazards faster
 ### Report Hazard
 ![Report Hazard](screenshots/report-hazard-main.jpg)
 
-### New Report Form
-![New Report Form](screenshots/new-report-form.jpg)
-
 ### Task Safety Checklist
 ![Task Safety Checklist](screenshots/task-safety-checklist.jpg)
 
