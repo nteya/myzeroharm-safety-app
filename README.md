@@ -1,4 +1,6 @@
 # MyZeroHarm
+## Demo Video
+Watch the demo on YouTube: [MyZeroHarm Demo](https://youtu.be/7rnwF_5X0jU)
 
 MyZeroHarm is a mobile safety reporting and awareness app built to improve communication, reporting, and safety culture on site.
 
