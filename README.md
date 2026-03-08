@@ -49,7 +49,16 @@ In many workplaces, safety information is not always shared fast enough, and som
 
 ## How It Works
 Users can report hazards and safety issues directly in the app, complete task safety checklists, participate in team safety assessments, and share safety-related updates. Admin users can manage assessments, campaigns, and reporting statistics through the admin tools section.
+## Why I Built This
+I work in the mining environment as a SHE Rep, and outside of work I spend my time building software projects. While working on site, I noticed the need for a safety app that could improve how employees and management communicate about hazards, risks, and safety concerns.
 
+Although there was already a reporting system in place, it mainly focused on reporting issues to management. That meant other employees were often unable to see, learn from, or respond to the safety issues being reported around them.
+
+I wanted to build an app that would allow both employees and management to interact around safety and health in a more structured, practical, and educational way. My goal was to create a platform where reporting does not only notify management, but also helps build awareness, learning, and shared responsibility across the workforce.
+
+I presented the idea to SKP management, and the response was positive because the app has the potential to educate employees more effectively about workplace risks and improve overall safety culture.
+
+I built MyZeroHarm because I enjoy challenging myself technically, and I also want to contribute meaningfully to the environments I work in. I like being part of solutions that help improve systems, people, and everyday work.
 ## Status
 This project is actively being improved and expanded.
 
