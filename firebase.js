@@ -6,15 +6,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // --- your config ---
-const firebaseConfig = {
-  apiKey: "AIzaSyCMqw5ax0VAGreqQ-Wojw58D4jGtqeg--Y",
-  authDomain: "therapy-7bef0.firebaseapp.com",
-  projectId: "therapy-7bef0",
-  storageBucket: "therapy-7bef0.firebasestorage.app",
-  messagingSenderId: "822766480110",
-  appId: "1:822766480110:web:2ae9f8877a67afe0ad21ff",
-  measurementId: "G-NH0MHW18EE"
-};
+
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
