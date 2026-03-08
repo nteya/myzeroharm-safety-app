@@ -49,16 +49,20 @@ function normalizePlan(raw) {
     'Don’t block emergency exits','Don’t enter restricted zones without permit',
     'Don’t stand under suspended loads','Don’t operate untrained','Don’t bypass PPE'
   ];
-  plan.dos = padToTen(toStrArr(raw?.dos), dontPool);
+  // ✅ fix: dos uses dosPool, donts uses dontPool
+  plan.dos = padToTen(toStrArr(raw?.dos), dosPool);
   plan.donts = padToTen(toStrArr(raw?.donts), dontPool);
 
   plan.risks = toStrArr(raw?.risks).slice(0, 24);
   plan.wellness = toStrArr(raw?.wellness).slice(0, 24);
   plan.ppe = Array.from(new Set(toStrArr(raw?.ppe))).slice(0, 24);
 
+  // NEW: permits (exact names, short)
+  plan.permits = Array.from(new Set(toStrArr(raw?.permits))).slice(0, 12);
+
   const hc = Array.isArray(raw?.hazardsControls) ? raw.hazardsControls : [];
   plan.hazardsControls = hc
-    .map((h) => ({ hazard: asStr(h?.hazard), control: asStr(h?.control) }))
+    .map((h) => ({ hazard: asStr(h?.hazard), control: asStr(h?.control) } ))
     .filter((x) => x.hazard && x.control)
     .slice(0, 24);
 
@@ -68,95 +72,92 @@ function normalizePlan(raw) {
 // ---------- offline plan + chat fallbacks ----------
 function offlinePlan(task, details) {
   const text = `${task}\n${details}`.toLowerCase();
+
   const BASE_CHECKS = [
-    'PPE correct & worn (helmet, boots, eye/ear, gloves)',
-    'Area inspected, hazards removed/barricaded',
-    'Tools & equipment inspected (tags, guards, power cords)',
-    'Permits in place (hot work / confined space / heights)',
-    'LOTO / isolation for stored energy confirmed',
-    'Emergency access, first aid & extinguisher available',
-    'Good housekeeping — clear walkways, tidy cables',
-    'Comms set (radio channel, spotter, hand signals)',
+    'Area inspected; hazards removed/barricaded',
+    'Tools & equipment inspected (guards/tags/cables)',
+    'LOTO/isolations applied and verified where needed',
+    'Emergency access clear; first aid & extinguisher available',
+    'Good housekeeping — clear walkways, no trip hazards',
+    'Communications set (radio channel, spotter, hand signals)',
   ];
-  const add = (arr, ...items) => items.forEach((i) => { if (!arr.includes(i)) arr.push(i); });
+
+  const add = (arr, ...items) => items.forEach((i) => { if (i && !arr.includes(i)) arr.push(i); });
   const hc = (list, hazard, control) => list.push({ hazard, control });
 
-  const dos = [], donts = [], risks = [], wellness = [], ppe = [], hazardsControls = [];
-  add(dos, 'Brief team on roles & signals','Keep exclusion zones/barriers in place','Report near-misses immediately');
+  const dos = [], donts = [], risks = [], wellness = [], ppe = [], hazardsControls = [], permits = [];
+
+  // generic
+  add(dos, 'Brief team on roles & signals','Set exclusion zones where needed','Report hazards/near-misses immediately');
   add(donts, 'Bypass guards or PPE','Work alone on high-risk tasks');
   add(risks, 'Pinch points & line-of-fire','Slips/trips on uneven ground');
   add(wellness, 'Hydrate every 30–45 minutes','Take micro-breaks to reset focus');
-  add(ppe, 'Hard hat','Safety glasses','Hearing protection','Steel-toe boots','High-vis vest','Work gloves');
+  add(ppe, 'Hard hat','Safety glasses','Hearing protection (if noisy)','Steel-toe boots','High-vis vest','Work gloves');
 
-  if (/(height|ladder|scaffold|roof|platform)/.test(text)) {
-    add(dos, 'Use fall-arrest (harness, lanyard, anchor)','Maintain 3-point contact on ladders');
-    add(donts, 'Overreach beyond guardrails','Stand on top two rungs');
-    add(risks, 'Falls, dropped objects, unguarded edges');
-    hc(hazardsControls, 'Fall from height', 'Certified anchor + inspected lanyard; guardrails/toeboards; tool lanyards');
-    add(ppe, 'Full-body harness & shock-absorbing lanyard');
+  // specific
+  if (/(weld|hot work|cut|grind|torch)/.test(text)) {
+    add(permits, 'Hot Work');
+    add(ppe, 'Welding helmet/filtered visor','Face shield (grinding)','FR long sleeves & pants','Leather welding gloves');
+    add(dos, 'Assign fire watch (during + 30 min after job)','Shield sparks; clear flammables ≥10 m');
+    add(donts, 'Leave smoldering material unattended');
+    add(risks, 'Fire, hot slag, eye injuries');
+    hc(hazardsControls, 'Sparks & hot slag', 'Spark containment; remove combustibles; extinguisher within 5 m; fire watch');
   }
   if (/(confined|tank|vessel|manhole|silo)/.test(text)) {
-    add(dos, 'Confined space permit & gas test (O₂, LEL, H₂S)','Ventilation & standby attendant');
-    add(donts, 'Enter without rescue plan','Block entry with hoses/cables');
+    add(permits, 'Confined Space');
+    add(ppe, 'Rescue harness','Gas monitor','Respirator per gas test');
+    add(dos, 'Gas test (O₂/LEL/H₂S/CO) & continuous monitoring','Ventilate; standby attendant; rescue plan ready');
+    add(donts, 'Enter without permit or rescue plan');
     add(risks, 'Asphyxiation, toxic gases, entrapment');
-    hc(hazardsControls, 'Toxic/low oxygen atmosphere', 'Continuous gas monitoring; forced ventilation; stop if alarm');
-    add(ppe, 'Rescue harness','Respirator (per gas test)','Portable gas detector');
+    hc(hazardsControls, 'Toxic/low oxygen atmosphere', 'Continuous monitoring; forced ventilation; stop if alarm');
+  }
+  if (/(height|ladder|scaffold|roof|platform)/.test(text)) {
+    add(permits, 'Working at Height');
+    add(ppe, 'Full-body harness','Double lanyard with shock absorber','Anchorage certified','Non-slip boots');
+    add(dos, 'Guardrails/toeboards or fall arrest in place','Ladder secured 1:4; three points of contact');
+    add(donts, 'Overreach beyond guardrails','Stand on top two rungs');
+    add(risks, 'Falls, dropped objects');
+    hc(hazardsControls, 'Fall from height', 'Certified anchor; inspected lanyard; tool lanyards; exclusion zone below');
   }
   if (/(electrical|panel|cable|breaker|live)/.test(text)) {
-    add(dos, 'Isolate & lock/tag — verify zero energy','Use insulated tools & arc-rated PPE');
-    add(donts, 'Assume it’s dead — test first');
+    add(permits, 'Electrical Work');
+    add(ppe, 'Insulated gloves (rated)','Arc-rated face shield/hood','FR clothing','Insulated tools');
+    add(dos, 'Isolate & lock/tag; verify absence of voltage','Respect approach boundaries; arc barriers');
+    add(donts, 'Assume it is dead — test first');
     add(risks, 'Shock, arc flash, burns');
-    hc(hazardsControls, 'Shock/arc flash', 'LOTO; test before touch; approach distances; arc barriers');
-    add(ppe, 'Arc-rated face shield/hood','Insulated gloves (rated)','FR clothing');
-  }
-  if (/(weld|hot work|cut|grind|torch)/.test(text)) {
-    add(dos, 'Hot-work permit & fire watch','Shield sparks; extinguisher nearby');
-    add(donts, 'Hot-work near flammables','Leave smoldering materials');
-    add(risks, 'Fire, eye injuries, flying particles');
-    hc(hazardsControls, 'Sparks & hot slag', 'Fire watch 30 min after; spark containment; remove combustibles');
-    add(ppe, 'Welding helmet/face shield','Leather gauntlet gloves','FR jacket/apron');
+    hc(hazardsControls, 'Shock/arc flash', 'LOTO; test before touch; barriers; competent person');
   }
   if (/(lift|crane|rig|hoist|forklift|sling)/.test(text)) {
-    add(dos, 'Inspect slings/hooks, verify SWL','Set exclusion zone & use spotter');
+    add(permits, 'Lifting Operations');
+    add(ppe, 'Helmet with chin strap','Gloves','High-vis vest','Safety boots');
+    add(dos, 'Inspect slings/shackles; verify SWL','Use tag lines; assign spotter/signal person');
     add(donts, 'Stand under suspended loads','Exceed rated capacity');
     add(risks, 'Dropped loads, swing, crush injuries');
-    hc(hazardsControls, 'Dropped load', 'Tag lines; clear path; trained rigger; stay within SWL');
-    add(ppe, 'Hard hat (chin strap if windy)','Safety boots');
+    hc(hazardsControls, 'Dropped load', 'Lift plan; clear path; exclusion zone; trained rigger');
   }
   if (/(excavat|trench|dig|pit)/.test(text)) {
-    add(dos, 'Locate services, shore/slope trenches','Keep spoil ≥1 m from edge');
-    add(donts, 'Enter unsupported trench >1.2 m','Park machines near edges');
-    add(risks, 'Collapse, engulfment, striking utilities');
-    hc(hazardsControls, 'Trench wall collapse', 'Shoring/shielding or slope; ladder every 7.5 m; inspect after rain');
+    add(permits, 'Excavation/Trenching');
     add(ppe, 'Hi-vis vest','Safety boots');
+    add(dos, 'Locate services; shore/slope trenches; ladder every 7.5 m','Keep spoil ≥1 m from edge');
+    add(donts, 'Enter unsupported trench >1.2 m');
+    add(risks, 'Collapse, engulfment, striking utilities');
+    hc(hazardsControls, 'Trench wall collapse', 'Shoring/shielding or slope; inspections after rain');
   }
   if (/(chemic|solvent|acid|paint)/.test(text)) {
-    add(dos, 'Read SDS & use specified PPE','Provide ventilation & spill kit');
-    add(donts, 'Mix chemicals unless specified','Store incompatibles together');
-    add(risks, 'Chemical burns, inhalation, reactions');
-    hc(hazardsControls, 'Chemical exposure/splash', 'Closed containers; eyewash nearby; decant with funnels; fume extraction');
+    add(permits, 'Chemical Handling');
     add(ppe, 'Chemical-resistant gloves','Goggles + face shield','APR/respirator as required','Chemical apron');
+    add(dos, 'Read SDS; provide spill kit & ventilation');
+    add(donts, 'Mix incompatible chemicals');
+    add(risks, 'Chemical burns, inhalation, reactions');
+    hc(hazardsControls, 'Chemical splash/exposure', 'Closed containers; eyewash nearby; fume extraction');
   }
   if (/(drive|truck|haul|traffic|vehicle)/.test(text)) {
-    add(dos, 'Pre-start checks; seatbelt on','Follow site speed & right-of-way');
-    add(donts, 'Use phone while driving','Tailgate on haul roads');
-    add(risks, 'Collisions, rollovers, pedestrians in path');
-    hc(hazardsControls, 'Pedestrian strike', 'Spotters; horns/lights; one-way systems; haul roads only');
-    add(wellness, 'Plan rest >2h driving — fatigue risk');
     add(ppe, 'Hi-vis vest','Safety boots');
-  }
-  if (/(blast|explosive)/.test(text)) {
-    add(dos, 'Clearance zones & sirens as plan','Account for personnel before firing');
-    add(donts, 'Re-enter until all-clear','Handle misfires without procedure');
-    add(risks, 'Flyrock, overpressure, misfires');
-    hc(hazardsControls, 'Flyrock/overpressure', 'Evacuate to safe distance; shelter; radio discipline');
-    add(ppe, 'Hard hat','Hearing protection','Safety glasses');
-  }
-  if (/(maintain|service|repair|lockout|loto)/.test(text)) {
-    add(dos, 'Zero-energy test after isolation','Bleed pressure & block movement');
-    add(donts, 'Rely on a switch alone','Remove others’ locks/tags');
-    add(risks, 'Unexpected start, stored energy release');
-    hc(hazardsControls, 'Unexpected start-up', 'Apply LOTO; verify zero energy; try-start test');
+    add(dos, 'Pre-start checks; seatbelt on','Follow site speed; use designated routes');
+    add(donts, 'Use phone while driving','Tailgate on haul roads');
+    add(risks, 'Collisions, rollovers, pedestrian strikes');
+    hc(hazardsControls, 'Pedestrian strike', 'Spotters; horns/lights; one-way systems; designated crossings');
+    add(wellness, 'Plan rest >2h driving — fatigue risk');
   }
 
   const dosPool = [
@@ -179,6 +180,7 @@ function offlinePlan(task, details) {
     risks,
     wellness,
     ppe: Array.from(new Set(ppe)),
+    permits: Array.from(new Set(permits)),
     hazardsControls,
   };
 }
@@ -190,6 +192,7 @@ function offlineChatAnswer(question, task) {
   if (plan.dos?.length) bits.push(`Do:\n- ${plan.dos.slice(0,5).join('\n- ')}`);
   if (plan.donts?.length) bits.push(`Don’t:\n- ${plan.donts.slice(0,5).join('\n- ')}`);
   if (plan.ppe?.length) bits.push(`PPE:\n- ${plan.ppe.slice(0,6).join('\n- ')}`);
+  if (plan.permits?.length) bits.push(`Permits:\n- ${plan.permits.slice(0,3).join('\n- ')}`);
   if (plan.hazardsControls?.length) {
     const top = plan.hazardsControls.slice(0,2).map(h => `• ${h.hazard} → ${h.control}`);
     bits.push(`Hazards & controls:\n${top.join('\n')}`);
@@ -201,22 +204,29 @@ function offlineChatAnswer(question, task) {
 // ---------- offline tips ----------
 function offlineDailyTips() {
   const pool = [
-    'Wear the right PPE for the task—don’t guess, check the SDS/permit.',
-    'Inspect tools before use: guards on, cables intact, tags current.',
-    'Keep walkways clear—housekeeping prevents slips and trips.',
-    'Use spotters and signals when moving vehicles or lifting loads.',
-    'Hydrate every 30–45 minutes; heat and fatigue build up quietly.',
-    'Lock out, tag out, and verify zero energy before maintenance.',
-    'Maintain three points of contact on ladders; no top-two rungs.',
-    'Shield sparks for hot work; keep extinguishers and a fire watch.',
-    'Know your emergency routes; don’t block extinguishers or exits.',
-    'Stop and ask if unsure—nothing is urgent enough to skip safety.',
-    'Set exclusion zones for overhead work; secure tools against drops.',
-    'Use correct lifting posture; get help or a device for heavy items.',
-    'Gas test confined spaces and ventilate—don’t enter without a plan.',
-    'Drive defensively on site roads; seatbelt on, phone off.',
+    // Housekeeping & waste/environment
+    'Use the right bin: recycle where available; keep waste off the floor.',
+    'Clean as you go — cables coiled, spill kits returned, tools put away.',
+    'Report spills immediately and contain safely; protect drains.',
+    'Store chemicals in labeled, compatible containers; lids on.',
+    // Health & wellness
+    'Hydrate every 30–45 minutes; heat and fatigue build quietly.',
+    'Stretch before repetitive work; take micro-breaks to reset focus.',
+    'Wear hearing protection in noisy areas — tinnitus is permanent.',
+    // Respect & behavior
+    'Respect colleagues — zero tolerance for bullying and harassment.',
+    'Stop work and speak up if something feels unsafe — you’ll be backed.',
+    // Core safety practices
+    'Keep walkways clear and exits unblocked.',
+    'Use spotters and signals around moving equipment.',
+    'Lock out, tag out, verify zero energy before maintenance.',
+    'Three points of contact on ladders; avoid top two rungs.',
+    'Hot work: permit, shields, extinguisher, fire watch.',
+    'Know your muster point and emergency routes.',
+    'Report hazards and near-misses; learning prevents incidents.',
   ];
-  return pool.slice(0, 10);
+  // return first 10 distinct items
+  return Array.from(new Set(pool)).slice(0, 10);
 }
 
 // ---------- assessment (DAILY) helpers ----------
@@ -283,7 +293,7 @@ exports.generateSafetyPlan = onRequest(
       const date = asStr(req.body?.date); // YYYY-MM-DD
       const revealRequested = req.body?.reveal === true || req.query?.reveal === '1';
 
-      // ---------- assessmentDaily: AI 15 Q once per date ----------
+      // ---------- assessmentDaily ----------
       if (mode === 'assessmentDaily') {
         if (!date) return res.status(400).json({ error: 'date (YYYY-MM-DD) is required' });
 
@@ -403,10 +413,10 @@ exports.generateSafetyPlan = onRequest(
                   dateKey,
                   version: 'v1',
                   revealAt: admin.firestore.Timestamp.fromMillis(revealAtMs),
-                  questions: fb.questions,
-                  answerKey: fb.answerKey,
-                  createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                  from: 'fallback',
+                questions: fb.questions,
+                answerKey: fb.answerKey,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                from: 'fallback',
                 },
                 { merge: false }
               );
@@ -491,9 +501,9 @@ exports.generateSafetyPlan = onRequest(
         const sys = [
           'You are a workplace safety officer for mining & heavy industry.',
           'Return ONLY valid JSON: { "tips": [string, ...] }.',
-          'Provide exactly 10 concise, practical safety tips for general site work.',
-          'Blend PPE, housekeeping, line-of-fire, LOTO, vehicle interaction, hot work, heights, confined space, emergency readiness, hydration/fatigue.',
-          'Avoid medical/legal advice; site-generic best practice.',
+          'Provide exactly 10 concise, practical tips with broad variety. Avoid repeating themes in one run.',
+          'Cover a spread across: housekeeping, waste & environmental care (e.g., bins/spill control), health & hydration/fatigue, respect/behavior (zero bullying/harassment), emergency readiness, reporting hazards/near-misses, vehicle/traffic, line-of-fire, LOTO/maintenance, PPE selection/use.',
+          'Keep each tip short and action-focused.',
           `If locale != "en", translate to that locale (e.g., "zu", "af").`
         ].join(' ');
         const user = JSON.stringify({ date, locale });
@@ -563,16 +573,17 @@ exports.generateSafetyPlan = onRequest(
       // -------- plan --------
       const sys = [
         'You are a workplace safety officer for mining & heavy industry.',
-        'Return ONLY valid JSON with keys: checklist, dos, donts, risks, wellness, ppe, hazardsControls.',
-        'rules:',
-        '- checklist: short pre-task checks (array of strings).',
+        'Return ONLY valid JSON with keys: checklist, dos, donts, risks, wellness, ppe, permits, hazardsControls.',
+        'Rules:',
+        '- checklist: short pre-task checks (array of strings). Keep them concise and task-relevant.',
         '- dos: EXACTLY 10 short, action-focused items.',
         '- donts: EXACTLY 10 short, action-focused items.',
         '- risks: concise risk cues (array of strings).',
         '- wellness: hydration/fatigue/heat/cold tips (array).',
-        '- ppe: exact, task-specific PPE items (array of strings).',
+        '- ppe: exact, task-specific PPE items (array of strings). Be explicit (e.g., "Welding helmet/filtered visor", not "correct PPE").',
+        '- permits: exact permit names needed (array of short strings), e.g., "Hot Work", "Confined Space", "Working at Height".',
         '- hazardsControls: array of { "hazard": "...", "control": "..." }.',
-        'No medical advice. Keep items concise and practical.',
+        'Keep items concise and practical. No medical advice.',
         `If locale != "en", translate items to that locale (e.g., "zu", "af").`
       ].join(' ');
       const user = JSON.stringify({ task, details, locale });

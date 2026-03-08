@@ -1,28 +1,25 @@
 {
   "expo": {
-    "name": "ZeroHarm",
-    "slug": "ZeroHarm",
+    "name": "MyZeroHarm",
+    "slug": "MyZeroHarm",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-
     "icon": "./assets/icon.png",
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0B0F14"
     },
-
-    "assetBundlePatterns": ["**/*"],
-
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "plugins": [
       "expo-image-picker",
       "expo-av",
       "expo-location"
     ],
-
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -32,41 +29,43 @@
         "NSLocationWhenInUseUsageDescription": "Allow location so hazards can include a precise spot on site."
       }
     },
-
     "android": {
       "backgroundColor": "#0B0F14",
       "edgeToEdgeEnabled": true,
-
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0F14",
         "monochromeImage": "./assets/adaptive-icon-mono.png"
       },
-
       "permissions": [
-        "CAMERA",
-        "RECORD_AUDIO",
-        "ACCESS_FINE_LOCATION",
-        "READ_MEDIA_IMAGES"
-      ]
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "package": "com.ntsika.ZeroHarm"
     },
-
     "androidStatusBar": {
       "backgroundColor": "#0B0F14",
       "barStyle": "light-content",
       "translucent": false,
       "hidden": false
     },
-
     "androidNavigationBar": {
       "backgroundColor": "#0B0F14",
       "barStyle": "light-content",
       "visible": "leanback"
     },
-
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "44a20295-223b-463b-857d-b5e30c74962e"
+      }
+    },
+    "owner": "ntsika"
   }
 }
-
